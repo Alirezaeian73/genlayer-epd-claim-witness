@@ -286,4 +286,3 @@ class EPDClaimWitness(gl.Contract):
     @gl.public.view
     def get_assessment_count(self) -> u256:
         return self.assessment_count
-"}
