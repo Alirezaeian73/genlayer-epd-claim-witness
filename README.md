@@ -1,43 +1,51 @@
 # EPD Claim Witness
 
-An experimental, standalone GenLayer Intelligent Contract for checking whether one specific product carbon claim is supported by a public Environmental Product Declaration (EPD).
+EPD Claim Witness is an experimental GenLayer Intelligent Contract prototype for checking a narrowly defined claim about a building product against its public Environmental Product Declaration (EPD).
 
-## The idea
+## What it checks
 
-A user records one product claim, such as a declared Global Warming Potential (GWP) value, together with the public EPD that is meant to support it.
+The current prototype accepts an International EPD System registration number, a claimed product name, a declared unit, and a claimed GWP-total value for life-cycle modules A1-A3.
 
-The contract is designed to have GenLayer validators independently examine the document and return a bounded, structured assessment. Deterministic contract logic then records the result. The model does not decide whether a product is environmentally good or make a general sustainability judgment.
+It retrieves the public EPD page and its linked PDF, asks the contract's extraction step to identify relevant facts and supporting quotes, and compares the extracted product, unit, indicator, module, and value with the submitted claim.
 
-The proposed result categories are:
-
-- `SUPPORTED`
-- `CONTRADICTED`
-- `UNCLEAR`
-- `SOURCE_UNAVAILABLE`
-
-The assessment is intended to consider the product identity, the reported indicator, life-cycle module, declared unit, and value. The exact rules will be finalized after checking what the GenLayer runtime can reliably retrieve and test.
+The current implementation is intentionally limited to EPD-IES registration numbers and GWP-total for A1-A3. This is the prototype's implemented scope, not a claim that the same method works for every EPD program, indicator, or life-cycle module.
 
 ## Why GenLayer
 
-EPDs are public evidence, but relevant information may appear in tables and descriptive text rather than in a simple, consistent data field. The intended use of GenLayer is to let validators independently interpret that evidence, while contract code applies a narrow comparison rule and records the result.
+Relevant EPD evidence can appear in document tables and text rather than in a consistent data field. The contract uses GenLayer's non-deterministic web and extraction calls for that evidence, then applies deterministic comparison rules and strict equivalence to the result before recording an assessment.
 
-If the contract can only store an answer supplied by a website or a single AI model, GenLayer would not add meaningful value. The implementation must put the consensus-critical assessment inside the Intelligent Contract.
+The consensus-critical assessment is part of the Intelligent Contract. A single website or an off-chain AI response is not treated as the final authority.
 
-## Planned first-version boundaries
+## Assessment results
 
-The first version is intended to:
+The contract records one of these outcomes:
 
-- assess one claim against one public EPD at a time;
-- preserve each assessment as a public record;
-- report uncertainty or unavailable evidence rather than silently treating it as a pass;
-- avoid product rankings, broad environmental scores, payments, or a frontend application.
+- `SUPPORTED`: the submitted product, declared unit, indicator, module, and value match the extracted EPD evidence.
+- `CONTRADICTED`: the product, unit, indicator, and module match, but the extracted value differs from the claim.
+- `UNCLEAR`: the evidence could not be confidently extracted or matched.
+- `SOURCE_UNAVAILABLE`: the EPD page or linked PDF could not be retrieved.
 
-This contract will not certify an EPD, verify the scientific accuracy of a life-cycle assessment, prove the real-world footprint of a physical product, or replace professional review. A source URL or content digest can help identify the material examined, but cannot by itself prove that the source is truthful or authoritative.
+`SUPPORTED` means agreement with the retrieved EPD snapshot only. It is not an EPD certification, an independent life-cycle assessment, or proof of the physical product's real-world environmental impact.
 
-Do not submit confidential documents or personal information. Contract inputs and stored results may be public.
+## Stored record
+
+Each completed assessment stores its result, submitted claim, source page and PDF URLs, a SHA-256 digest of the rendered document text, extracted source values, and supporting quotes. Assessments are indexed by an incrementing ID and can be read through the contract's view methods.
+
+Inputs and stored results may be public. Do not submit confidential documents or personal information.
+
+## Current limitations
+
+- The prototype targets public EPD-IES pages and their linked PDFs.
+- It handles one GWP-total claim for modules A1-A3 at a time.
+- Retrieval and extraction can fail or be ambiguous; these cases should not be treated as a pass.
+- A document digest identifies the rendered text used for an assessment, but does not prove that the source is truthful or authoritative.
+- Live PDF retrieval and validator agreement in a GenLayer network have not yet been verified.
+- The contract has not been deployed.
+
+## Development verification
+
+The local prototype passed `genvm-lint check`, `genvm-lint typecheck`, and eight Direct Mode tests. Those tests mock web retrieval and extraction. They do not verify live EPD retrieval, live PDF processing, or validator agreement on a GenLayer network.
 
 ## Project status
 
-This repository currently contains an initial design only. The contract has not yet been implemented, linted, tested, or deployed. No live GenLayer result is claimed.
-
-The design will be revised if source retrieval, consensus behavior, or testing shows that the proposed scope is not reliable.
+This repository contains the prototype contract. Further work should focus on making the validation and test setup reproducible from the repository, and verifying the source-retrieval path in a GenLayer runtime before any deployment.
