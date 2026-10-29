@@ -33,19 +33,14 @@ Each completed assessment stores its result, submitted claim, source page and PD
 
 Inputs and stored results may be public. Do not submit confidential documents or personal information.
 
-## Current limitations
+## Development setup
 
-- The prototype targets public EPD-IES pages and their linked PDFs.
-- It handles one GWP-total claim for modules A1-A3 at a time.
-- Retrieval and extraction can fail or be ambiguous; these cases should not be treated as a pass.
-- A document digest identifies the rendered text used for an assessment, but does not prove that the source is truthful or authoritative.
-- Live PDF retrieval and validator agreement in a GenLayer network have not yet been verified.
-- The contract has not been deployed.
+The commands below use Python 3.13, which was used for local validation.
 
-## Development verification
+From the repository root, create and activate a virtual environment, then install the pinned development dependencies:
 
-The local prototype passed `genvm-lint check`, `genvm-lint typecheck`, and eight Direct Mode tests. Those tests mock web retrieval and extraction. They do not verify live EPD retrieval, live PDF processing, or validator agreement on a GenLayer network.
-
-## Project status
-
-This repository contains the prototype contract. Further work should focus on making the validation and test setup reproducible from the repository, and verifying the source-retrieval path in a GenLayer runtime before any deployment.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements-dev.txt
