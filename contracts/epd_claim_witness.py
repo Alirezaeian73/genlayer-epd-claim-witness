@@ -189,7 +189,7 @@ class EPDClaimWitness(gl.Contract):
             if not pdf_url:
                 return _json({"status": "SOURCE_UNAVAILABLE"})
             try:
-                document_text = gl.nondet.web.render(pdf_url, mode="text")
+                document_text = gl.nondet.web.render("https://r.jina.ai/" + pdf_url, mode="text")
             except Exception:
                 return _json({"status": "SOURCE_UNAVAILABLE"})
             if not isinstance(document_text, str) or not document_text.strip():
@@ -260,6 +260,7 @@ class EPDClaimWitness(gl.Contract):
             "expected_module": "A1-A3",
             "source_page_url": page_url,
             "source_pdf_url": pdf_url,
+            "source_text_url": "https://r.jina.ai/" + pdf_url if pdf_url else "",
             "rendered_text_sha256": source_hash,
             "source_product_name": extracted.get("product_name", "") if isinstance(extracted, dict) else "",
             "source_declared_unit": extracted.get("declared_unit", "") if isinstance(extracted, dict) else "",
@@ -273,7 +274,7 @@ class EPDClaimWitness(gl.Contract):
                 "module": extracted.get("module_quote", "") if isinstance(extracted, dict) else "",
                 "value": extracted.get("value_quote", "") if isinstance(extracted, dict) else "",
             },
-            "notice": "This records agreement with one published EPD snapshot. It is not a certification or a measurement of the physical product.",
+            "notice": "This records agreement with one published EPD snapshot using a third-party text extraction service. It is not a certification or a measurement of the physical product.",
         }
         self.assessments[record_id] = _json(record)
         self.assessment_count += 1
