@@ -188,8 +188,9 @@ class EPDClaimWitness(gl.Contract):
             pdf_url = _find_pdf_url(page_html)
             if not pdf_url:
                 return _json({"status": "SOURCE_UNAVAILABLE"})
+            text_url = "https://r.jina.ai/" + pdf_url
             try:
-                document_text = gl.nondet.web.render("https://r.jina.ai/" + pdf_url, mode="text")
+                document_text = gl.nondet.web.render(text_url, mode="text")
             except Exception:
                 return _json({"status": "SOURCE_UNAVAILABLE"})
             if not isinstance(document_text, str) or not document_text.strip():
@@ -205,20 +206,36 @@ class EPDClaimWitness(gl.Contract):
             result = {
                 "status": "OK",
                 "pdf_url": pdf_url,
+                "text_url": text_url,
                 "rendered_text_sha256": hashlib.sha256(document_text.encode("utf-8")).hexdigest(),
                 "extracted": extracted,
             }
             return _json(result)
 
-        consensus_output = gl.eq_principle.strict_eq(evaluate_source)
+        principle = (
+            "Independently evaluate the two JSON results. Accept only when both agree on status. "
+            "For status OK, the official PDF URL and text retrieval URL must match. The normalized "
+            "product name and declared unit must match, the indicator must be GWP-total, the module "
+            "must be A1-A3, and the numeric raw GWP value must match exactly. Each evidence quote "
+            "must be non-empty and the extracted facts must be supported by the quoted text. "
+            "Ignore differences in rendered text hashes and harmless quote formatting only when the "
+            "required facts agree. Reject conflicting facts or any unsupported value."
+        )
+        consensus_output = gl.eq_principle.prompt_comparative(evaluate_source, principle=principle)
         try:
-            observed = json.loads(consensus_output)
+            if isinstance(consensus_output, str):
+                observed = json.loads(consensus_output)
+            elif isinstance(consensus_output, dict):
+                observed = consensus_output
+            else:
+                observed = {"status": "EXTRACTION_UNCLEAR"}
         except Exception:
             observed = {"status": "EXTRACTION_UNCLEAR"}
 
         status = "UNCLEAR"
         extracted = observed.get("extracted", {}) if isinstance(observed, dict) else {}
         pdf_url = observed.get("pdf_url", "") if isinstance(observed, dict) else ""
+        text_url = observed.get("text_url", "") if isinstance(observed, dict) else ""
         source_hash = observed.get("rendered_text_sha256", "") if isinstance(observed, dict) else ""
 
         if isinstance(observed, dict) and observed.get("status") == "SOURCE_UNAVAILABLE":
@@ -260,7 +277,7 @@ class EPDClaimWitness(gl.Contract):
             "expected_module": "A1-A3",
             "source_page_url": page_url,
             "source_pdf_url": pdf_url,
-            "source_text_url": "https://r.jina.ai/" + pdf_url if pdf_url else "",
+            "source_text_url": text_url,
             "rendered_text_sha256": source_hash,
             "source_product_name": extracted.get("product_name", "") if isinstance(extracted, dict) else "",
             "source_declared_unit": extracted.get("declared_unit", "") if isinstance(extracted, dict) else "",
